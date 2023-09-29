@@ -1,1 +1,31 @@
+name: Deploy feature branch to productoin bucket
 
+on:
+  push:
+    branches:
+      - feature*
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      BUCKET_NAME: cfst-3457-41eb4f1873f869f1c360829b2-nonprodbucket-y6jna0vns7ea
+    steps:
+      - name: checkout code
+        uses: actions/checkout@2
+      - name: configure aws cli
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secret.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secret.AWS_SECTER_ACCESS_KEY }}
+          aws-region: us-east-1
+      - name: set up node js
+        uses: actions/setup-node@v2
+        with:
+          node-version: 14
+      - name: build site
+        run: |
+          npm ci
+          npm run build
+      - name: deploy files to bucket
+        run: aws s3 cp public s3://${{ env.BUCKET_NAME }}/ --recursive --acl public-read
+        
